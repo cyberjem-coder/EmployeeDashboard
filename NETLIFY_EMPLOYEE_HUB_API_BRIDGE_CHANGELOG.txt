@@ -1,0 +1,10 @@
+V10.15 ADDITIVE REPAIR — COMPLETE NETLIFY DASHBOARD API BRIDGE
+
+- Added a server-side Netlify API proxy for the existing Apps Script dashboard operations.
+- Added a browser google.script.run compatibility layer for Netlify only; native Apps Script mode is left intact.
+- Connected cloud revision read, cloud snapshot read/write, historical archive, owner password change, authorized computer list/revoke, and task evidence upload.
+- Added chunked Drive evidence upload so existing 10 MB image / 20 MB video limits do not require one oversized Netlify request.
+- Owner password verification remains in Apps Script; Netlify does not compare against a potentially stale duplicate password variable.
+- Existing dashboard data model, tabs, workflows, payroll calculations, and feature files are retained.
+
+This is a source-code repair package. It still requires the Apps Script code to be updated and redeployed, then the complete ZIP to be deployed to Netlify. Runtime verification against the user's live Google Sheet and Netlify account cannot be performed from this local package.

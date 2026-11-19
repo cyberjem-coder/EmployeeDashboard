@@ -1,30 +1,47 @@
-PATCH SUMMARY — EMPLOYEE HUB V10.15
-=====================================
+PATCH SUMMARY — EMPLOYEE HUB V10.15 NETLIFY DASHBOARD REPAIR
+=============================================================
 
-Root cause identified:
-Netlify device registration was routed inside a doPost(e) block that already
-held LockService.getScriptLock(). The existing hubCheckOwnerPassword_()
-function tries to acquire that same script lock, so registration could time
-out even with the correct password.
+ROOT CAUSES ADDRESSED
+---------------------
+1. The Netlify package had only an Owner Authorization endpoint. The dashboard
+   itself still called google.script.run for cloud and admin operations, but
+   static Netlify pages do not provide google.script.run.
+2. The task-evidence module had been inserted inside the payslip print HTML
+   template. This broke the main dashboard script block and prevented the main
+   JavaScript from loading correctly. The module is now a separate script again.
+3. The Netlify owner endpoint compared against a duplicate OWNER_PASSWORD
+   environment variable. That could become stale when the password changed in
+   Apps Script. Owner password verification now remains server-side in Apps
+   Script.
 
-Correction:
-Netlify device bridge actions are now parsed and routed before the general
-snapshot-sync lock is acquired. The other doPost actions continue through the
-existing locked flow.
+ADDITIVE CORRECTIONS
+--------------------
+- Added netlify/functions/employee-hub-api.js with an allowlist of existing
+  Employee Hub server operations.
+- Added a Netlify-only google.script.run compatibility layer in Index.html.
+  Native Apps Script google.script.run remains intact in the separate HTML.
+- Connected cloud revision, snapshot load/save, archive batches, evidence
+  upload, owner password changes, authorized computer listing and revocation.
+- Added chunked Drive evidence upload. Existing 10 MB photo and 20 MB video
+  limits are retained.
+- Refreshes the cloud revision after a computer is authorized, reducing
+  revision-conflict failures on the first save.
+- Updated setup instructions and added a test report.
 
-Preserved:
-- All files from the uploaded package.
-- Employee Hub dashboard HTML and tabs.
-- Existing employee, attendance, payroll, tasks, evidence, archive, audit,
-  and device-registry code.
-- Netlify Function endpoint and existing UI password form.
-- Existing Google Sheets data is not touched by preparing this ZIP.
+PRESERVATION
+------------
+- No source files from the latest uploaded ZIP were removed.
+- Original employee, attendance, payroll, task, evidence, archive, audit,
+  payroll export, quarterly reporting, motivator, and security features remain.
+- Existing spreadsheet tabs, records, employee PINs, and password hashes are
+  not changed by preparing this ZIP.
+- The original Apps Script-hosted HTML mode is retained.
 
-Validation:
-- Original package files retained; only the Apps Script backend and setup
-  instructions were updated, with an additional ready-to-copy Code.gs file.
-- Existing archive, payroll export, quarterly payroll, spoken motivator, and
-  AI coach source tests were run. All passed when the AI coach test was
-  supplied its required Index.html argument.
-- Netlify Function syntax and Apps Script source still require deployment-
-  environment testing. This is not a live-deployment guarantee.
+VALIDATION
+----------
+- 11 of 11 automated source tests passed.
+- Standalone JavaScript syntax checks passed for all HTML script blocks,
+  Netlify Functions, and the Apps Script source.
+- Live Netlify, Apps Script deployment, Google Sheets, and Drive integration
+  still require deployment testing. Preparing this ZIP does not change the
+  user's live website or spreadsheet.

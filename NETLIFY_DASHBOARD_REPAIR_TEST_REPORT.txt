@@ -1,0 +1,32 @@
+EMPLOYEE HUB V10.15 — LOCAL SOURCE TEST REPORT
+==============================================
+
+RESULT: 11 of 11 included automated tests passed.
+
+Passed checks include:
+- AI Supervisor / Coach behavior tests.
+- Historical archive append and duplicate-protection tests.
+- Netlify API forwards approved methods with the server-side shared secret.
+- Netlify API rejects unapproved methods before contacting Apps Script.
+- Owner password registration is forwarded to Apps Script for server-side verification without requiring a duplicate Netlify OWNER_PASSWORD value.
+- Apps Script routes the dashboard bridge before the general lock and exposes only the approved operations.
+- Netlify HTML includes the compatibility bridge and the task-evidence module
+  is executed separately from the payslip print template.
+- Owner-device bridge lock-order test.
+- Payroll export tests.
+- Quarterly payroll summary test.
+- Spoken motivator tests.
+
+Additional static syntax checks passed for:
+- All standalone inline JavaScript blocks in Index.html.
+- All standalone inline JavaScript blocks in the separate Apps Script HTML.
+- netlify/functions/employee-hub-api.js.
+- netlify/functions/owner-device-auth.js.
+- APPS_SCRIPT_UPDATED_Code.gs (JavaScript syntax check).
+
+IMPORTANT LIMITATION
+--------------------
+These are local source-code tests. They do not prove that the live Netlify
+site, Apps Script deployment, Script Properties, Drive folder permissions, or
+Google spreadsheet are configured correctly. Those live checks must be done
+after deploying the package. No live user data was accessed or changed.

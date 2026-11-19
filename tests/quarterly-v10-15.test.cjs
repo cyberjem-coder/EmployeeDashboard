@@ -1,6 +1,6 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path');
 const html=fs.readFileSync(path.join(__dirname,'..','Index.html'),'utf8');
-const a=html.indexOf('/* V10.15 ADDITIVE'),b=html.lastIndexOf('</script>');assert(a>=0&&b>a,'V10.15 module exists');
+const a=html.indexOf('/* V10.15 ADDITIVE QUARTERLY PAYROLL SUMMARY'),b=html.indexOf('</script>',a);assert(a>=0&&b>a,'V10.15 quarterly payroll module exists');
 const els={q15Year:{value:'2026'},q15Quarter:{value:'1'},q15Cycle:{value:'month'}};
 function periodRange(type,ref){const d=new Date(ref);let s=new Date(d),e=new Date(d);if(type==='month'){s=new Date(d.getFullYear(),d.getMonth(),1);e=new Date(d.getFullYear(),d.getMonth()+1,0)}return {start:s.toISOString().slice(0,10),end:e.toISOString().slice(0,10)}}
 const db={employees:[{id:'e1',name:'Staff A'}],payrollPayments:[{date:'2026-02-15',amount:100}],records:[{date:'2026-02-10'}],absences:[]};

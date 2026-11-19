@@ -44,6 +44,15 @@ function doPost(e) {
       return json_({ ok: false, error: String(bridgeError && bridgeError.message || bridgeError) });
     }
   }
+  // Full Employee Hub API bridge. Route BEFORE the snapshot lock because
+  // individual handlers acquire their own locks and/or call lock-protected helpers.
+  if (bridgePayload && bridgePayload.action === 'netlifyHubApi') {
+    try {
+      return hubNetlifyApiAction_(bridgePayload);
+    } catch (apiError) {
+      return json_({ ok: false, error: String(apiError && apiError.message || apiError) });
+    }
+  }
 
   const lock = LockService.getScriptLock();
   try {
@@ -230,6 +239,39 @@ function hubNetlifyDeviceAction_(payload){
     sh.appendRow([id,hash,label,new Date().toISOString(),new Date().toISOString(),'ACTIVE','']);appendServerAudit_('Netlify Owner Password','DEVICE REGISTERED',label);return json_({ok:true});
   }
   throw new Error('Unsupported Netlify device action.');
+}
+
+/**
+ * V10.15 ADDITIVE NETLIFY DASHBOARD API.
+ * The shared secret is held only by Netlify and Apps Script Script Properties.
+ * Device-protected methods still validate the device ID/token in their existing
+ * server functions; owner-management methods still verify the owner password.
+ */
+function hubNetlifyApiAction_(payload) {
+  const props = PropertiesService.getScriptProperties();
+  const expected = String(props.getProperty('HUB_NETLIFY_BRIDGE_SECRET') || '');
+  const supplied = String(payload.bridgeSecret || '');
+  if (!expected || !supplied || hubHashDeviceToken_(expected) !== hubHashDeviceToken_(supplied)) {
+    throw new Error('Employee Hub Netlify bridge is not configured or is unauthorized.');
+  }
+  const method = String(payload.method || '');
+  const args = Array.isArray(payload.args) ? payload.args : [];
+  const allowed = {
+    getHubRevision: getHubRevision,
+    getHubSnapshot: getHubSnapshot,
+    saveHubSnapshot: saveHubSnapshot,
+    archiveEmployeeHubRecords: archiveEmployeeHubRecords,
+    uploadTaskEvidence: uploadTaskEvidence,
+    startTaskEvidenceUpload: startTaskEvidenceUpload,
+    appendTaskEvidenceUploadChunk: appendTaskEvidenceUploadChunk,
+    finishTaskEvidenceUpload: finishTaskEvidenceUpload,
+    setHubOwnerDevicePassword: setHubOwnerDevicePassword,
+    listHubDevices: listHubDevices,
+    revokeHubDevice: revokeHubDevice
+  };
+  if (!Object.prototype.hasOwnProperty.call(allowed, method)) throw new Error('Unsupported Employee Hub operation.');
+  const result = allowed[method].apply(null, args);
+  return json_({ ok: true, result: result === undefined ? null : result });
 }
 
 function doGet() {
@@ -658,6 +700,92 @@ function uploadTaskEvidence(payload) {
     uploadedAt: new Date().toISOString()
   };
   appendServerAudit_('Authorized Employee Hub device', 'TASK EVIDENCE FILE UPLOADED', taskId + ' | ' + employeeId + ' | ' + file.getName());
+  return result;
+}
+
+/**
+ * Netlify-safe resumable task-evidence upload. The browser sends small chunks
+ * through the Netlify function so a 20 MB video never becomes one oversized
+ * serverless-function request. Existing uploadTaskEvidence() remains intact
+ * for Apps Script-hosted clients.
+ */
+function startTaskEvidenceUpload(payload) {
+  if (!payload || typeof payload !== 'object') throw new Error('Invalid evidence upload request.');
+  requireHubDevice_(payload.deviceId, payload.deviceToken);
+  const taskId = String(payload.taskId || ''), employeeId = String(payload.employeeId || '');
+  const fileName = String(payload.fileName || 'task-evidence').replace(/[\\/:*?"<>|]/g, '_').slice(0, 150);
+  const mimeType = String(payload.mimeType || '').toLowerCase();
+  const isImage = /^image\/(jpeg|png|webp|gif|heic|heif)$/.test(mimeType);
+  const isVideo = /^video\/(mp4|quicktime|webm|3gpp|x-msvideo|mpeg|ogg)$/.test(mimeType);
+  const expectedBytes = Number(payload.expectedBytes || 0);
+  const expectedChunks = Number(payload.expectedChunks || 0);
+  if (!taskId || !employeeId || !/^[A-Za-z0-9_-]{4,100}$/.test(taskId) || !/^[A-Za-z0-9_-]{2,100}$/.test(employeeId)) throw new Error('Invalid task or employee reference.');
+  if (!isImage && !isVideo) throw new Error('Only supported photo and video formats are accepted.');
+  const limit = isImage ? 10 * 1024 * 1024 : 20 * 1024 * 1024;
+  if (!Number.isInteger(expectedBytes) || expectedBytes < 1 || expectedBytes > limit) throw new Error('File exceeds the allowed size limit.');
+  if (!Number.isInteger(expectedChunks) || expectedChunks < 1 || expectedChunks > 80) throw new Error('Invalid upload chunk count.');
+  const rootId = PropertiesService.getScriptProperties().getProperty('TASK_EVIDENCE_FOLDER_ID');
+  if (!rootId) throw new Error('Task evidence folder is not configured. Set Script Property TASK_EVIDENCE_FOLDER_ID to the shared Drive folder ID.');
+  const uploadId = Utilities.getUuid().replace(/-/g, '');
+  const tempFolder = DriveApp.getFolderById(rootId).createFolder('_EH_UPLOAD_' + uploadId);
+  const session = { uploadId, folderId: tempFolder.getId(), taskId, employeeId, fileName, mimeType, expectedBytes, expectedChunks, createdAt: Date.now() };
+  PropertiesService.getScriptProperties().setProperty('HUB_TASK_UPLOAD_' + uploadId, JSON.stringify(session));
+  return { ok: true, uploadId };
+}
+
+function appendTaskEvidenceUploadChunk(payload) {
+  if (!payload || typeof payload !== 'object') throw new Error('Invalid upload chunk.');
+  requireHubDevice_(payload.deviceId, payload.deviceToken);
+  const uploadId = String(payload.uploadId || '');
+  if (!/^[a-f0-9]{32}$/i.test(uploadId)) throw new Error('Invalid upload session.');
+  const props = PropertiesService.getScriptProperties();
+  const raw = props.getProperty('HUB_TASK_UPLOAD_' + uploadId);
+  if (!raw) throw new Error('Upload session expired. Please retry the upload.');
+  const session = JSON.parse(raw);
+  const index = Number(payload.index), base64 = String(payload.base64 || '');
+  if (!Number.isInteger(index) || index < 0 || index >= session.expectedChunks) throw new Error('Invalid upload chunk number.');
+  if (!base64 || base64.length > 700000) throw new Error('Upload chunk is empty or too large.');
+  const bytes = Utilities.base64Decode(base64);
+  if (!bytes.length || bytes.length > 512 * 1024) throw new Error('Upload chunk size is invalid.');
+  const folder = DriveApp.getFolderById(session.folderId);
+  const chunkName = 'chunk_' + String(index).padStart(4, '0') + '.bin';
+  const existing = folder.getFilesByName(chunkName);
+  while (existing.hasNext()) existing.next().setTrashed(true);
+  folder.createFile(Utilities.newBlob(bytes, 'application/octet-stream', chunkName));
+  return { ok: true, index };
+}
+
+function finishTaskEvidenceUpload(payload) {
+  if (!payload || typeof payload !== 'object') throw new Error('Invalid upload completion request.');
+  requireHubDevice_(payload.deviceId, payload.deviceToken);
+  const uploadId = String(payload.uploadId || '');
+  if (!/^[a-f0-9]{32}$/i.test(uploadId)) throw new Error('Invalid upload session.');
+  const props = PropertiesService.getScriptProperties();
+  const key = 'HUB_TASK_UPLOAD_' + uploadId;
+  const raw = props.getProperty(key);
+  if (!raw) throw new Error('Upload session expired. Please retry the upload.');
+  const session = JSON.parse(raw);
+  const tempFolder = DriveApp.getFolderById(session.folderId);
+  const chunks = [];
+  const files = tempFolder.getFiles();
+  while (files.hasNext()) {
+    const file = files.next();
+    const match = /^chunk_(\d{4})\.bin$/.exec(file.getName());
+    if (match) chunks.push({ index: Number(match[1]), bytes: file.getBlob().getBytes() });
+  }
+  chunks.sort((a, b) => a.index - b.index);
+  if (chunks.length !== session.expectedChunks || chunks.some((c, i) => c.index !== i)) throw new Error('One or more upload chunks are missing. Please retry the upload.');
+  const allBytes = [];
+  chunks.forEach(chunk => chunk.bytes.forEach(byte => allBytes.push(byte)));
+  if (allBytes.length !== session.expectedBytes) throw new Error('Uploaded file size did not match the original. Please retry the upload.');
+  const root = DriveApp.getFolderById(PropertiesService.getScriptProperties().getProperty('TASK_EVIDENCE_FOLDER_ID'));
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const file = root.createFile(Utilities.newBlob(allBytes, session.mimeType, stamp + '_' + session.fileName));
+  file.setDescription('Employee Hub task evidence | Task ID: ' + session.taskId + ' | Employee ID: ' + session.employeeId + ' | Uploaded: ' + new Date().toISOString());
+  tempFolder.setTrashed(true);
+  props.deleteProperty(key);
+  const result = { ok: true, fileId: file.getId(), fileName: file.getName(), mimeType: session.mimeType, url: file.getUrl(), uploadedAt: new Date().toISOString() };
+  appendServerAudit_('Authorized Employee Hub device', 'TASK EVIDENCE FILE UPLOADED', session.taskId + ' | ' + session.employeeId + ' | ' + file.getName());
   return result;
 }
 

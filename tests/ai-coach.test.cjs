@@ -1,5 +1,6 @@
-const fs=require('fs'),vm=require('vm'),assert=require('assert');
-const html=fs.readFileSync(process.argv[2],'utf8');
+const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path');
+const sourcePath=process.argv[2] && fs.existsSync(process.argv[2]) ? process.argv[2] : path.join(__dirname,'..','Index.html');
+const html=fs.readFileSync(sourcePath,'utf8');
 const a=html.indexOf('function renderEmployeeAICoach('),b=html.indexOf('\nfunction refreshEmployeeAICoach',a);
 assert(a>=0&&b>a,'coach function exists');
 const ctx={db:{records:[],performanceReviews:[]},dateKey:()=> '2026-11-13',periodStart:()=> '2026-11-09',esc:s=>String(s??'').replace(/[&<>"\']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),console};

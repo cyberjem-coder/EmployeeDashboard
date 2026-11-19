@@ -1,0 +1,43 @@
+39ERS EMPLOYEE HUB V10.15 — ADDITIVE NETLIFY DASHBOARD API BRIDGE
+
+WHAT THIS ADD-ON FIXES
+The Netlify page previously used google.script.run for cloud snapshot load/save, revision checks, archive batches, task evidence uploads, and owner computer settings. Static Netlify pages do not provide google.script.run. This add-on supplies a compatibility layer and a server-side Netlify Function that securely forwards only approved operations to the existing Apps Script functions.
+
+FILES ADDED / UPDATED
+- Added netlify/functions/employee-hub-api.js (approved dashboard API proxy).
+- Updated netlify/functions/owner-device-auth.js so Apps Script verifies the owner password; a stale Netlify OWNER_PASSWORD copy is no longer used for comparison. Existing OWNER_PASSWORD variable may remain but is no longer required by this endpoint.
+- Updated APPS_SCRIPT_UPDATED_Code.gs with the netlifyHubApi dispatcher and resumable Drive upload handlers.
+- Added a browser compatibility shim to Index.html and the standalone dashboard HTML. Native Apps Script google.script.run is not replaced when present.
+- Kept the original dashboard features and existing uploadTaskEvidence() function.
+
+NETLIFY ENVIRONMENT VARIABLES
+Keep these existing variables and their current values:
+1. HUB_APPS_SCRIPT_URL = the deployed Apps Script Web App URL ending in /exec
+2. HUB_BRIDGE_SECRET = the long shared secret
+3. OWNER_PASSWORD may remain as an existing variable; this updated endpoint no longer reads it.
+Do not put HUB_BRIDGE_SECRET in HTML or share it with employees.
+
+APPS SCRIPT SCRIPT PROPERTY
+HUB_NETLIFY_BRIDGE_SECRET must match HUB_BRIDGE_SECRET exactly. Do not change HUB_OWNER_DEVICE_PASSWORD_HASH or any existing password hash.
+
+IMPORTANT DEPLOYMENT REQUIREMENT
+After updating the bound Apps Script project with APPS_SCRIPT_UPDATED_Code.gs, deploy a NEW Web App deployment version. Because Netlify calls Apps Script server-to-server, deploy as Execute as: Me. Set access to Anyone only if your Google account's deployment options require it for the Netlify server request. The public web app endpoint is protected by the shared bridge secret and server-side device/owner checks; keep that secret private. If your account does not offer an appropriate access option, stop and ask before changing access settings.
+
+NETLIFY DEPLOYMENT
+Upload/deploy the complete ZIP contents as one site package. Netlify must publish the package root (netlify.toml already sets publish = ".") and functions directory (netlify.toml already sets functions = "netlify/functions"). Do not deploy only the HTML file.
+
+TASK EVIDENCE
+The browser sends evidence in small chunks to avoid one oversized Netlify Function request. Existing photo limit (10 MB) and video limit (20 MB) are retained. The Apps Script property TASK_EVIDENCE_FOLDER_ID must already point to the private Drive folder.
+
+SAFE TEST ORDER
+1. Deploy the new Apps Script version first.
+2. Confirm HUB_NETLIFY_BRIDGE_SECRET matches HUB_BRIDGE_SECRET.
+3. Deploy the complete Netlify package.
+4. Open the Netlify site and authorize this computer if asked.
+5. Test a harmless button first, then use Settings > Google Sheets real-time sync > Sync now.
+6. Test Load cloud data only after making a JSON backup; it intentionally replaces local data with the latest cloud snapshot.
+7. Test task evidence with a small image before testing a large video.
+8. Test archive only after Preview eligible records; archive copies records and does not delete originals.
+
+NO SPREADSHEET RESET
+This update does not ask you to create a new spreadsheet, clear tabs, delete data, or change existing employee PINs. Existing records and spreadsheet tabs are intended to remain in place.

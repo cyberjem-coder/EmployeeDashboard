@@ -1,20 +1,33 @@
 EMPLOYEE HUB V10.15 — START HERE
 ================================
 
-This package contains the Netlify Owner Authorization Bridge fix.
+This package contains the additive Netlify Dashboard API Bridge repair.
 
 IMPORTANT:
-Use NETLIFY_OWNER_PASSWORD_SETUP_README.txt as the current setup guide.
-That guide supersedes earlier instructions in this package that said the
-static Netlify site could not use Owner Security.
+The earlier package connected the Owner Authorization screen but did not
+connect all dashboard operations to Netlify. This package adds that missing
+connection and repairs the dashboard JavaScript structure so the main script
+can load. It is not just another password-screen patch.
 
-The Owner Password has already been created in the bound Apps Script project.
-For the Netlify flow, the Netlify OWNER_PASSWORD environment variable must
-contain exactly the same password.
+PLEASE FOLLOW THIS GUIDE IN ORDER:
+NETLIFY_OWNER_PASSWORD_SETUP_README.txt
 
-The Apps Script backend also needs the HUB_NETLIFY_BRIDGE_SECRET Script
-Property and a new Web App deployment version after the backend code is
-updated. Follow the current setup guide one step at a time.
+Short version:
+1. Back up your existing Apps Script Code.gs.
+2. Update Code.gs using APPS_SCRIPT_UPDATED_Code.gs from this package.
+3. Confirm Apps Script Script Property HUB_NETLIFY_BRIDGE_SECRET matches the
+   Netlify HUB_BRIDGE_SECRET exactly.
+4. Deploy a new Apps Script Web App version, keeping the current access
+   settings unchanged for the first test.
+5. Deploy the complete ZIP contents to the Netlify-connected GitHub repository.
+6. Confirm both Netlify functions are deployed: owner-device-auth and
+   employee-hub-api.
+7. Test dashboard navigation, Google Sheets Sync now, a small task photo, and
+   only then the other operations.
 
-Do not delete spreadsheet tabs, employee records, or existing dashboard
-features. Back up Code.gs before updating it.
+Do not delete spreadsheet tabs, employee records, payroll data, or existing
+features. Do not create a new spreadsheet. Do not share passwords or secrets.
+
+This is a source-code repair package. It has passed the included local tests,
+but it has not yet been deployed or tested against the live Netlify site and
+live Google spreadsheet.
