@@ -1,0 +1,22 @@
+V10.15 OWNER AUTHORIZATION UI FIX
+=================================
+
+This is an additive correction to the supplied Netlify Owner Authorization Add-On ZIP.
+
+FIX:
+- Previously, if the automatic device-status request failed, the page only displayed an error in the status line.
+- The password-entry panel remained hidden, so an unregistered computer had no way to enter the Owner Password.
+- The corrected flow now reveals the Owner Password and computer-name fields after a failed status check and explains that the user can still attempt registration.
+- If the status check succeeds and the device is unregistered/revoked, the password-entry panel is also shown as before.
+
+PRESERVATION:
+- No existing dashboard sections, tabs, employee records, PINs, payroll logic, tasks, evidence uploads, archive logic, formulas, Apps Script functions, or Google Sheets sheets/rows were intentionally removed or changed.
+- Only the startDeviceAuthorization() UI error-handling function in Index.html was changed.
+- All other files from the supplied ZIP are retained.
+
+IMPORTANT:
+- This ZIP has been source-patched, not tested against the live Netlify site or live Google Sheet.
+- The Netlify Function still requires the three environment variables documented in NETLIFY_OWNER_PASSWORD_SETUP_README.txt.
+- The Apps Script backend must include the Netlify bridge handler and the matching HUB_NETLIFY_BRIDGE_SECRET Script Property.
+- A failed server configuration/connection will now show the password form, but registration will still fail until the server connection is correctly configured.
+- Back up the currently deployed package and spreadsheet before deploying this correction.

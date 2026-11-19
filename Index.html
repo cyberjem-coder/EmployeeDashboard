@@ -901,7 +901,36 @@ let hubDeviceAuthorized=false;
 function hubDeviceCredentials(){let id=localStorage.getItem(HUB_DEVICE_ID_KEY),token=localStorage.getItem(HUB_DEVICE_TOKEN_KEY);if(!id||!token){const b=new Uint8Array(32);crypto.getRandomValues(b);token=Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');id=crypto.randomUUID?crypto.randomUUID():Array.from(b,x=>x.toString(16).padStart(2,'0')).join('');localStorage.setItem(HUB_DEVICE_ID_KEY,id);localStorage.setItem(HUB_DEVICE_TOKEN_KEY,token)}return {deviceId:id,deviceToken:token}}
 function deviceGate(show,msg){const gate=document.getElementById('deviceGate');gate.classList.toggle('hidden',!show);document.body.classList.toggle('hub-device-ready',!show);if(msg)document.getElementById('deviceGateMessage').textContent=msg}
 async function hubNetlifyAuth(action,extra={}){const c=hubDeviceCredentials();const response=await fetch('/.netlify/functions/owner-device-auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...c,...extra})});let data={};try{data=await response.json()}catch(_){}if(!response.ok||!data.ok)throw new Error(data.error||'Owner authorization service could not verify this computer.');return data}
-async function startDeviceAuthorization(){deviceGate(true,'Checking this computer with the secure owner registry…');document.getElementById('deviceGateWait').classList.remove('hidden');try{const r=await hubNetlifyAuth('status');document.getElementById('deviceGateWait').classList.add('hidden');if(r.authorized){hubDeviceAuthorized=true;deviceGate(false);if(db.sheetUrl)syncNow(true);return}document.getElementById('deviceGateMessage').textContent=r.revoked?'This computer was revoked by the owner.':'This computer is not registered. Enter the Owner Password to authorize it.';document.getElementById('deviceGateSetup').classList.remove('hidden')}catch(e){document.getElementById('deviceGateWait').textContent='Verification failed. Access remains blocked: '+e.message}}
+async function startDeviceAuthorization(){
+  deviceGate(true,'Checking this computer with the secure owner registry…');
+  const wait=document.getElementById('deviceGateWait');
+  const setup=document.getElementById('deviceGateSetup');
+  const error=document.getElementById('deviceGateError');
+  wait.classList.remove('hidden');
+  setup.classList.add('hidden');
+  error.textContent='';
+  try{
+    const r=await hubNetlifyAuth('status');
+    wait.classList.add('hidden');
+    if(r.authorized){
+      hubDeviceAuthorized=true;
+      deviceGate(false);
+      if(db.sheetUrl)syncNow(true);
+      return;
+    }
+    document.getElementById('deviceGateMessage').textContent=
+      r.revoked?'This computer was revoked by the owner.':'This computer is not registered. Enter the Owner Password to authorize it.';
+    setup.classList.remove('hidden');
+  }catch(e){
+    // A failed status lookup must NOT hide the password form.
+    // The owner can still attempt registration; the server will verify it.
+    wait.classList.add('hidden');
+    document.getElementById('deviceGateMessage').textContent=
+      'This computer could not be verified yet. Enter the Owner Password to try authorization.';
+    setup.classList.remove('hidden');
+    error.textContent='Status check failed: '+(e&&e.message?e.message:'Unable to contact the authorization service.')+' You can still try AUTHORIZE THIS COMPUTER.';
+  }
+}
 function bootstrapOwnerAndAuthorize(){document.getElementById('deviceGateError').textContent='The Owner Password is configured securely in Netlify Environment Variables. Enter it above and click AUTHORIZE THIS COMPUTER. The confirmation field is not needed for Netlify setup.'}
 async function authorizeThisComputer(){const p=document.getElementById('ownerDevicePassword').value,label=(document.getElementById('deviceFriendlyName').value||'Authorized computer').trim().slice(0,60);if(!p)return alert('Enter the Owner Authorization Password.');document.getElementById('deviceGateError').textContent='Verifying owner authorization…';try{await hubNetlifyAuth('register',{password:p,label});hubDeviceAuthorized=true;document.getElementById('ownerDevicePassword').value='';document.getElementById('ownerDevicePasswordConfirm').value='';deviceGate(false);if(db.sheetUrl)syncNow(true);alert('This computer is now authorized.')}catch(e){document.getElementById('deviceGateError').textContent=e.message}}
 function setOwnerDevicePassword(){const current=document.getElementById('ownerDeviceCurrentPassword').value,p=document.getElementById('ownerDeviceNewPassword').value,q=document.getElementById('ownerDeviceConfirmPassword').value;if(!current)return alert('Enter the current Owner Authorization Password.');if(p.length<12)return alert('Use at least 12 characters.');if(p!==q)return alert('Passwords do not match.');google.script.run.withSuccessHandler(()=>{document.getElementById('ownerDeviceCurrentPassword').value='';document.getElementById('ownerDeviceNewPassword').value='';document.getElementById('ownerDeviceConfirmPassword').value='';alert('Owner Authorization Password changed successfully.')}).withFailureHandler(e=>alert(e&&e.message||'Could not change password.')).setHubOwnerDevicePassword(current,p)}
