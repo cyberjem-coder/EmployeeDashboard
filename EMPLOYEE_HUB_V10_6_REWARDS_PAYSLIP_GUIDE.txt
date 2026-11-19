@@ -1,0 +1,53 @@
+EMPLOYEE HUB V10.6 — REWARDS & PAYSLIP DISPLAY
+================================================
+
+ADDITIVE-ONLY PRESERVATION
+This package starts from the V10.5 Rewards & Recognition build. It adds reward categories, approval/status tracking, a manager payslip note, and a Rewards & Recognition section on the payslip. It does not intentionally remove existing pages, tabs, workflows, PIN gates, attendance, payroll calculations, tasks/Mission Control, performance reviews, monthly feedback, owner device authorization, language controls, audit, backup, or sync features.
+
+WHAT IS NEW
+1. Managers can manually record Food, Gift, Approved Request, Cash Reward, Certificate, Recognition, or Other. Legacy Cash Bonus and Meal categories remain available.
+2. Each reward can include employee, title, award/approval date, description, reason/achievement, optional equivalent value in PHP, status, and optional payslip note.
+3. Statuses: Given / provided, Approved, Pending approval, and Cancelled.
+4. Manager reward history displays category, status, description, reason, payslip note, and equivalent value.
+5. Employee My Rewards & Recognition displays the same details through the existing employee PIN view.
+6. Payslip preview, print/save-PDF output, and share/copy text include a separate Rewards & Recognition section for the selected pay period. It shows reward date, title, category, description, reason, manager note, status, and equivalent value.
+7. Only Approved and Given rewards appear on payslips. Pending rewards remain in history but are not shown on payslips until approved or given. Cancelled rewards remain in history but are excluded from payslips.
+8. Existing V10.5 rewards without a status are treated as Given, preserving their historical display.
+9. Google Sheets Rewards & Recognition export adds Status, Payslip Note, and Equivalent Value columns. Other exports remain as before.
+
+PAYROLL SAFEGUARDS
+- Equivalent values are informational only and appear in a separate recognition section.
+- Non-cash food, gifts, and approved requests do not increase gross earnings or net cash pay.
+- This feature does not automatically send a reward to Payroll Central, create a payroll adjustment, or change statutory/tax calculations.
+- Existing payroll formulas and bonus/deduction adjustment logic are unchanged.
+- If a reward should become a cash earning, payroll must handle it through the existing approved payroll adjustment workflow and ensure it is not duplicated. Confirm the correct tax/statutory treatment with your payroll adviser.
+
+INSTALLATION
+1. Back up your current Employee Hub HTML, Apps Script project, Google spreadsheet, and export a full JSON backup from Settings.
+2. Standalone mode: open employee_hub_black_gold_mission_control_v10_6_rewards_payslip.html in the same browser profile to retain access to existing localStorage data.
+3. Apps Script hosted mode: update the existing Apps Script HTML file named Index with the included Index.html. Update the existing backend source with employee_hub_google_sheets_v5.gs. Keep the existing spreadsheet and Script Properties.
+4. Deploy a new Apps Script web-app version using the existing authorized deployment settings and owner-device authorization configuration.
+5. After sync, confirm the Rewards & Recognition sheet contains the new Status, Payslip Note, and Equivalent Value columns.
+6. Manager: open Performance > OPEN REWARDS MANAGER. Add the reward, choose category and status, enter equivalent value if applicable, and write a payslip note.
+7. Payroll manager: open Payroll Central, choose employee and pay period, then Preview / download. The reward section is appended to the payslip and print/share output.
+
+VALIDATION PERFORMED
+- All 142 HTML IDs found in the V10.5 source are retained; 2 new IDs were added.
+- All 108 named JavaScript functions found in V10.5 are retained; 2 helper functions were added.
+- Existing localStorage key employeeHubStandalone_v1 is retained.
+- Standalone HTML JavaScript syntax check passed with Node.js.
+- Apps Script backend JavaScript syntax check passed with Node.js.
+- Index.html is byte-for-byte identical to the standalone dashboard.
+- ZIP integrity check passed.
+- Static checks only. Live browser/mobile, deployed Apps Script, Google Sheets write, and print/share tests still need to be performed in your account.
+
+SECURITY / PRODUCTION NOTE
+Employee PIN and manager/payroll PIN gates are existing client-side workflow controls. Keep the Apps Script deployment restricted to authorized accounts and registered computers. Do not use a public anonymous endpoint for payroll or private employee data. Confirm local payroll and tax treatment before production use.
+
+V10.7 ADDITIVE PAYROLL PAYMENT LEDGER
+- Payroll Central now includes manager payment controls under the existing Payroll PIN gate.
+- Record payment due dates and full or partial disbursements, including payment date, cash/bank/GCash/other method, reference, notes, and manager name.
+- Payment history is append-only. Corrections are recorded as reversal entries linked to the original payment; do not delete or overwrite a recorded payment.
+- Employee PIN verification in My Rewards also unlocks that employee's own payroll payment history. Employees cannot view another employee's payment history through this view.
+- Payroll period snapshots are stored separately from the existing Payroll Summary tab. Existing Payroll Summary columns and payroll formulas are retained.
+- For Food Cost integration, configure Script Property FOOD_COST_PAYROLL_SYNC_TOKEN and deploy a separate payroll export web app deployment. See PAYROLL_INTEGRATION_SETUP.md.

@@ -1,0 +1,9 @@
+EMPLOYEE HUB V10.13 ADDITIVE PAYROLL COMPATIBILITY
+
+- Added a token-protected, read-only payroll export contract for Food Cost V29.
+- Exports payroll summaries for weekly, biweekly, and monthly periods with period type kept distinct.
+- Maps existing Employee Hub payroll calculations, classifications, payment records, reversals, paid totals, outstanding balances, and payment statuses.
+- Reads the latest saved cloud snapshot; retains a legacy sheet-based fallback.
+- Preserves the legacy `payments` and `periods` export fields for existing consumers.
+- Does not write to Employee Hub data during export.
+- Existing V10.12 UI, tabs, payroll formulas, employee records, tasks, evidence, PIN/device security, rewards, reviews, and other workflows are unchanged.

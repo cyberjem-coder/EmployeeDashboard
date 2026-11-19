@@ -1,0 +1,16 @@
+EMPLOYEE HUB V10.14 — 120-DAY HISTORICAL ARCHIVE ADD-ON
+
+Base package: Employee Hub V10.13.
+
+Additions:
+- Added a Notes-PIN-protected 120-day archive preview and Sync & Archive Now control in Settings.
+- Copies eligible attendance, absence, task, performance review, adjustment, payroll payment/status, reward, and audit records to the append-only Employee Hub Historical Archive sheet in batches of up to 200.
+- Adds Employee Hub Archive History logging.
+- Duplicate archive keys are skipped, making retries safe.
+- Disabled the previous automatic 90-day local audit pruning and changed the Apps Script Audit Trail writer to append missing records without pruning.
+
+Preservation and limitations:
+- No original records are removed or altered by the archive operation.
+- Payroll formulas, source-of-truth behavior, device authorization, existing tabs, existing routes, and existing features remain in place.
+- This is a safe copy-only archive stage. It does not yet unload old records from the browser working dataset; doing so requires a separate archive-aware refactor and full payroll/report regression testing.
+- Historical records previously pruned by older 90-day audit behavior cannot be recreated by this upgrade.

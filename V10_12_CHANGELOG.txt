@@ -1,0 +1,8 @@
+EMPLOYEE HUB V10.12 CHANGELOG
+- Added optional per-task photo/video evidence requirement for managers.
+- Added employee multi-file evidence upload UI for in-progress tasks.
+- Added Google Drive upload endpoint using the authorized-device bridge and private configured folder.
+- Added evidence preview/open links in manager task review.
+- Added evidence-required submission and approval safeguards.
+- Appended evidence requirement/count/reference fields to the Tasks export.
+- Existing task, payroll, employee, manager, performance, reward, and sync workflows are preserved.

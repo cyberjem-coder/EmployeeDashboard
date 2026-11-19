@@ -1,0 +1,20 @@
+EMPLOYEE HUB V10.8 — AI SUPERVISOR & AI MOTIVATOR ADD-ON
+
+WHAT WAS ADDED
+- After an employee successfully enters the existing PIN-protected Mission Zone, two new panels appear: AI Supervisor and AI Motivator.
+- AI Supervisor reviews only that employee's own assigned tasks, task due dates/statuses, attendance records, and latest manager-entered performance review.
+- AI Motivator provides supportive next-step encouragement based on the employee's recorded work state.
+- A refresh control rebuilds the briefing from current local records.
+
+IMPORTANT BEHAVIOR / LIMITS
+- This is a local, deterministic coaching engine (AI-style rules), not a connected generative-AI service. It makes no external AI/API calls and sends no employee records to an AI provider.
+- It does not create or change tasks, approve submissions, edit attendance, alter payroll, award XP, or change manager-approved performance scores.
+- It does not make disciplinary decisions or infer employee character. It reports recorded facts and offers supportive suggestions. Managers remain responsible for verification, corrections, coaching decisions, and formal reviews.
+- The panels are only rendered inside the existing authenticated employee Mission Zone. The existing PIN login and lock controls remain in place.
+- No new storage keys, database fields, external dependencies, or network integrations are introduced.
+
+PRESERVATION
+All existing navigation, employee login, mission/task workflows, payroll, rewards, payslips, attendance, performance calculations, Google Sheets integration, security controls, and storage keys are retained. The new code is additive.
+
+DEPLOYMENT
+Replace the deployed Employee Hub HTML/Index.html with the included updated file. Keep the existing Apps Script deployment and configuration unless you are separately applying the payroll integration setup. Test employee PIN login, view the two panels, refresh the briefing, and lock the Mission Zone.

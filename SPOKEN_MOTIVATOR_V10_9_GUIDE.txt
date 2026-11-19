@@ -1,0 +1,32 @@
+EMPLOYEE HUB V10.9 — BILINGUAL SPOKEN MOTIVATOR ADD-ON
+
+ADDITIVE FEATURE
+- Adds spoken motivational encouragement to the existing employee Mission Zone after a successful employee PIN login.
+- Adds a MOTIVATE ME button for another message at any time while the employee Mission Zone is unlocked.
+- Uses the existing Employee Hub language selector: English or Tagalog.
+- Rotates through a local phrase library and avoids repeating the immediately previous phrase in the same language during the page session.
+- Adds mute/unmute and adjustable volume controls.
+- Uses the browser's built-in SpeechSynthesis API. It prefers a Filipino/Tagalog voice when one is installed, then falls back to a Philippine English or other available voice. Actual voice availability depends on the browser and operating system.
+- Cancels speech when the employee locks the Mission Zone.
+
+PRIVACY / DATA
+- All phrase text is stored in the HTML bundle and speech is generated locally by the browser.
+- No external AI provider, API endpoint, new backend call, or network integration is used by the spoken feature.
+- The spoken content is generic encouragement only. It does not speak employee names, PINs, attendance details, payroll, private notes, task instructions, or manager-only information.
+- No new database fields or localStorage keys are introduced by this add-on.
+
+BROWSER NOTES
+- Speech synthesis must be supported and enabled by the browser/device.
+- The successful PIN submission is a user interaction, which normally permits browser speech playback. Browser/device settings may still block speech.
+- If no Tagalog voice is installed, the browser may pronounce Tagalog text using a fallback voice. Install/enable a Filipino voice in the operating system for better pronunciation where available.
+- Volume is controlled by the in-page slider; mute cancels current playback.
+
+PRESERVATION
+- Existing tabs, navigation, employee PIN login, Mission Zone, task workflows, supervisor briefing, payroll, payslips, attendance, performance calculations, rewards, security controls, Google Sheets integration, Apps Script backend, and storage keys are retained.
+- Both HTML entry points are byte-identical.
+- The Apps Script (.gs) file is unchanged because this is a browser-only feature.
+
+DEPLOYMENT
+- Replace the deployed Employee Hub HTML/Index.html with the matching V10.9 HTML file from this bundle.
+- Keep the existing Apps Script deployment and configuration unchanged.
+- Test English and Tagalog using the header language selector, then enter the Mission Zone with a test employee PIN. Confirm the greeting, Motivate Me replay, mute, volume, and lock behavior.

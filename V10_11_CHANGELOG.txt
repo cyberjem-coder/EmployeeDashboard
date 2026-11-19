@@ -1,0 +1,7 @@
+V10.11 — Additive Employee Password & Security Question Upgrade
+Base: V10.10 Salary Payment Acknowledgment Edition.
+Added employee password registration, PBKDF2-SHA-256 password hashing, password login alternative, security-question registration and password recovery.
+Existing employee PIN login remains as fallback.
+Existing salary payment acknowledgment add-on and all V10.9/V10.10 functionality retained.
+No changes intended to payroll formulas, Apps Script bridge, syncNow(), or existing sync serializer.
+See V10_11_PASSWORD_SECURITY_GUIDE.md and V10_11_TEST_REPORT.txt.

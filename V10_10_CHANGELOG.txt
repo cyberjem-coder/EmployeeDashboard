@@ -1,0 +1,5 @@
+V10.10 — Salary Payment Acknowledgment Additive Bundle
+Base: V10.9 Bilingual Spoken Motivator Edition.
+Added separate salary message, optional audio, employee acknowledgment/dispute/clarification responses and timestamps.
+No existing feature intentionally removed. Existing Apps Script bridge and synchronization serializer preserved.
+See SALARY_PAYMENT_ACKNOWLEDGMENT_V10_10_GUIDE.md for security limitations and deployment steps.

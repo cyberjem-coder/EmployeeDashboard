@@ -1,0 +1,17 @@
+EMPLOYEE HUB V10.9 — VALIDATION REPORT
+
+PASS — JavaScript syntax checks: all three inline script blocks in Index.html passed Node.js --check.
+PASS — Existing AI Supervisor/Motivator regression tests: 6 tests passed using tests/ai-coach.test.cjs.
+PASS — HTML entry points: Index.html and employee_hub_black_gold_mission_control_v10_6_rewards_payslip.html are byte-identical.
+PASS — Existing employee PIN verification remains in place.
+PASS — Existing hubLanguage selector remains in place and is used by spoken output.
+PASS — Automatic greeting is invoked only after successful employee PIN validation.
+PASS — Manual Motivate Me playback is available inside the authenticated Mission Zone.
+PASS — Separate English and Tagalog phrase pools are present.
+PASS — Mute/unmute and volume controls are present.
+PASS — Speech is generated with browser SpeechSynthesis; no external speech/API call was added.
+PASS — Speech is cancelled when the Mission Zone is locked.
+PASS — Apps Script backend file is unchanged.
+
+MANUAL DEVICE TEST STILL REQUIRED
+Actual audio output and Tagalog voice quality depend on the target browser, operating system, installed voices, and audio settings. Those cannot be verified in a headless source validation. Test on the actual employee device before production rollout.

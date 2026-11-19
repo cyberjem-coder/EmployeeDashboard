@@ -1,0 +1,19 @@
+EMPLOYEE HUB V10.13 — ADDITIVE PAYROLL EXPORT COMPATIBILITY
+
+Base package: Employee Hub V10.12 task photo/video evidence upgrade.
+
+Changed existing file:
+- employee_hub_google_sheets_v5.gs (read-only payroll export compatibility layer only)
+- PAYROLL_INTEGRATION_SETUP.md (corrected environment-variable names and deployment guidance)
+
+Added files:
+- V10_13_CHANGELOG.txt
+- V10_13_BUILD_NOTES.txt
+- V10_13_PAYROLL_COMPATIBILITY_UPGRADE.md
+- tests/payroll-export-v10-13.test.cjs
+
+Preservation:
+- All original V10.12 archive entries are retained.
+- Index.html and all other Employee Hub UI assets are unchanged.
+- Existing payroll calculations and data-writing flows are unchanged.
+- Export reads the saved cloud snapshot or legacy summary sheets and does not write to Employee Hub during a Food Cost request.

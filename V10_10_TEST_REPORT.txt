@@ -1,0 +1,11 @@
+V10.10 ADDITIVE SALARY ACKNOWLEDGMENT MODULE — TEST NOTES
+
+Static validation performed during packaging:
+- Existing V10.9 source retained; add-on injected as a separate script and separate UI panels.
+- Existing Apps Script bridge file retained byte-for-byte.
+- Existing syncNow() and payload serializer retained byte-for-byte in both HTML entry points.
+- New add-on uses only the separate employeeHubSalaryComms_v1 localStorage key and does not call saveDB(), syncNow(), or mutate db.
+- Employee response lookup is scoped to taskEmployeeSession and matching employee ID.
+- Audio size cap: 2 MB.
+
+Limitations: no live Netlify/Google deployment test was possible in this packaging environment. Browser-local storage is not server-side private storage and does not synchronize between devices. See SALARY_PAYMENT_ACKNOWLEDGMENT_V10_10_GUIDE.md.
