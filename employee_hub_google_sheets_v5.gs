@@ -33,6 +33,7 @@ function doPost(e) {
 
     const raw = e && e.postData && e.postData.contents ? e.postData.contents : '{}';
     const payload = JSON.parse(raw);
+    if (String(payload.action||'').startsWith('netlifyDevice')) return hubNetlifyDeviceAction_(payload);
     if (String(payload.action||'') === 'foodCostPayrollExport') return foodCostPayrollExport_({token:payload.token});
     requireHubDevice_(payload.deviceId,payload.deviceToken);
     if (payload.app !== 'Employee Hub' || !payload.data) throw new Error('Invalid Employee Hub payload.');
@@ -183,6 +184,36 @@ function registerHubDevice(id,token,label,password){if(!hubCheckOwnerPassword_(p
 function listHubDevices(ownerPassword){if(!hubCheckOwnerPassword_(ownerPassword))throw new Error('Owner Authorization Password is incorrect.');return hubDeviceSheet_().getDataRange().getValues().slice(1).map(r=>({deviceId:String(r[0]),label:String(r[2]),registeredAt:String(r[3]||''),lastSeen:String(r[4]||''),status:String(r[5]||'ACTIVE')}))}
 function revokeHubDevice(id,ownerPassword){if(!hubCheckOwnerPassword_(ownerPassword))throw new Error('Owner Authorization Password is incorrect.');const sh=hubDeviceSheet_(),v=sh.getDataRange().getValues();for(let i=1;i<v.length;i++)if(String(v[i][0])===String(id)){sh.getRange(i+1,6,1,2).setValues([['REVOKED',new Date().toISOString()]]);appendServerAudit_('Password-authorized owner','DEVICE REVOKED',String(id));return {ok:true}}throw new Error('Device not found.')}
 function setHubOwnerDevicePassword(currentPassword,newPassword){if(!hubCheckOwnerPassword_(currentPassword))throw new Error('Current Owner Authorization Password is incorrect.');const p=String(newPassword||'');if(p.length<12)throw new Error('Owner password must be at least 12 characters.');PropertiesService.getScriptProperties().setProperty(HUB_OWNER_PASSWORD_PROP,hubOwnerPasswordHash_(p));appendServerAudit_('Password-authorized owner','OWNER DEVICE PASSWORD CHANGED','Owner device password hash updated.');return {ok:true}}
+
+/* V10.15 ADDITIVE NETLIFY OWNER-DEVICE BRIDGE.
+ * Netlify validates the Owner Password; this shared secret authenticates the
+ * server-to-server request before any device registry operation is performed.
+ */
+function hubNetlifyDeviceAction_(payload){
+  const props=PropertiesService.getScriptProperties();
+  const expected=String(props.getProperty('HUB_NETLIFY_BRIDGE_SECRET')||'');
+  const supplied=String(payload.bridgeSecret||'');
+  if(!expected||!supplied||hubHashDeviceToken_(expected)!==hubHashDeviceToken_(supplied)) throw new Error('Netlify device bridge is not configured or is unauthorized.');
+  const id=String(payload.deviceId||''), token=String(payload.deviceToken||'');
+  if(!/^[A-Za-z0-9-]{20,80}$/.test(id)||!/^[a-f0-9]{64}$/i.test(token)) throw new Error('Invalid device credentials.');
+  if(payload.action==='netlifyDeviceStatus') return json_({ok:true,...getHubDeviceStatus(id,token)});
+  if(payload.action==='netlifyDeviceRegister'){
+    const password=String(payload.password||'');
+    if(password.length<12) throw new Error('Owner Authorization Password must contain at least 12 characters.');
+    const props=PropertiesService.getScriptProperties();
+    if(!props.getProperty(HUB_OWNER_PASSWORD_PROP)){
+      // First successful Netlify authorization initializes the existing salted server-side hash.
+      props.setProperty(HUB_OWNER_PASSWORD_PROP,hubOwnerPasswordHash_(password));
+      appendServerAudit_('Netlify Owner Password','OWNER PASSWORD INITIALIZED','Owner password hash initialized through protected Netlify bridge.');
+    } else {
+      hubCheckOwnerPassword_(password); // Retains the existing five-attempt / 15-minute lockout.
+    }
+    const label=String(payload.label||'Authorized computer').slice(0,60), sh=hubDeviceSheet_(), rows=sh.getDataRange().getValues(), hash=hubHashDeviceToken_(token);
+    for(let i=1;i<rows.length;i++) if(String(rows[i][0])===id){sh.getRange(i+1,2,1,6).setValues([[hash,label,rows[i][3]||new Date().toISOString(),new Date().toISOString(),'ACTIVE','']]);appendServerAudit_('Netlify Owner Password','DEVICE REAUTHORIZED',label);return json_({ok:true});}
+    sh.appendRow([id,hash,label,new Date().toISOString(),new Date().toISOString(),'ACTIVE','']);appendServerAudit_('Netlify Owner Password','DEVICE REGISTERED',label);return json_({ok:true});
+  }
+  throw new Error('Unsupported Netlify device action.');
+}
 
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index')
