@@ -1,0 +1,23 @@
+EMPLOYEE HUB V10.15 — ADDITIVE OWNER SECURITY FIX
+
+This package is based on the exact uploaded 02_Employee_Hub_V10_15(2).zip. It preserves all 33 original files and adds this guide. Only Index.html is patched. The existing Apps Script backend is retained unchanged.
+
+WHAT THE PATCH FIXES
+The website called bootstrapHubOwnerDevicePassword(password), but the supplied Apps Script backend does not contain that callable function. The backend instead provides bootstrapHubOwnerDevicePasswordOnce(), a one-time server-side setup helper. The patched website now checks whether the server password is configured and displays the correct next step. It no longer calls a missing server function.
+
+HOW TO SET UP
+1. In the bound Employee Dashboard Google Sheet, open Extensions > Apps Script.
+2. In the function dropdown, select bootstrapHubOwnerDevicePasswordOnce.
+3. Click Run and follow the Google authorization prompts.
+4. Enter an Owner Password of at least 12 characters in the prompt. This stores a salted hash in Apps Script Script Properties. Run this setup helper only once.
+5. Open Employee Hub using the deployed Apps Script web app URL ending in /exec.
+6. On a new computer, enter the Owner Password in the website and click AUTHORIZE THIS COMPUTER. Each computer is authorized once; existing device registry, revocation and lockout behavior remain unchanged.
+
+HOSTING NOTE
+The supplied Index.html explicitly requires the deployed Apps Script web app because it uses google.script.run. Static standalone Netlify hosting cannot run this authorization flow. Do not change deployment access settings as part of this patch; the existing deployment and account permissions need to be reviewed separately before any security-setting change.
+
+PRESERVATION
+No existing tabs, dashboard features, payroll, task workflows, evidence uploads, archive functions, formulas, or integrations are intentionally removed or modified. The Apps Script backend file is byte-for-byte unchanged. No spreadsheet data is modified by building this ZIP.
+
+VALIDATION
+ZIP integrity was checked. The patched HTML contains the server-status check and no longer calls the missing bootstrapHubOwnerDevicePassword(password) function. This is source-level validation only; it has not been deployed or tested against the live spreadsheet.
