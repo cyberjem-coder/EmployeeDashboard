@@ -1,41 +1,128 @@
-EMPLOYEE HUB V10.15 — ADDITIVE NETLIFY OWNER AUTHORIZATION BRIDGE
+EMPLOYEE HUB V10.15 — NETLIFY OWNER AUTHORIZATION BRIDGE FIX
+=============================================================
 
-WHAT THIS PATCH DOES
-- Replaces the static-hosting block on the existing Owner Security gate with a same-site Netlify Function call.
-- Netlify checks OWNER_PASSWORD server-side; it is never sent back to the browser.
-- Netlify talks to the existing bound Apps Script backend using a separate shared bridge secret.
-- Apps Script initializes the existing salted Owner Password hash on the first successful website authorization, then uses its existing password verifier and five-failure / 15-minute lockout for later attempts.
-- Apps Script continues to store device IDs and hashed device tokens in the existing Authorized Devices sheet.
-- Existing device credentials, registration records, and revocation status are retained.
+WHAT WAS FIXED
+--------------
+The previous doPost(e) took the Apps Script script lock before routing a
+Netlify device-registration request. The Owner Password verifier also takes
+that same lock. This could make a correct password fail with a lock timeout.
 
-IMPORTANT: This is a source package and has NOT been deployed or tested against your live spreadsheet. Do not deploy until the setup below is complete and you have a backup.
+The updated Apps Script backend now routes Netlify device-bridge requests
+before taking the general snapshot lock. Normal Employee Hub snapshot sync
+and Food Cost payroll-export handling remain in the existing locked path.
 
-NETLIFY BUILD CONFIG
-- This repository is deployed from its root. The supplied netlify.toml sets publish="." and functions="netlify/functions".
-- Your Netlify screen showed Publish directory: Not set and Functions directory: netlify/functions. The root publish setting matches that current root deployment.
+The Netlify Function and Owner Security UI are retained. The UI already
+shows the password-entry form after a status-check error.
 
-REQUIRED NETLIFY ENVIRONMENT VARIABLES
-1. OWNER_PASSWORD = your strong Owner Password (use at least 16 characters).
-2. HUB_APPS_SCRIPT_URL = the deployed bound Apps Script Web App URL ending in /exec.
-3. HUB_BRIDGE_SECRET = a long random secret, at least 32 characters.
+IMPORTANT: This is a source-level correction. It has NOT been deployed or
+tested against your live Netlify site or live Google spreadsheet.
 
-APPS SCRIPT SETUP
-- In the bound Employee Dashboard spreadsheet, open Extensions > Apps Script.
-- Add the updated employee_hub_google_sheets_v5.gs code to the existing backend file without deleting unrelated project files/functions.
-- In Apps Script Project Settings > Script Properties, add HUB_NETLIFY_BRIDGE_SECRET with EXACTLY the same value as Netlify HUB_BRIDGE_SECRET. The Owner Password hash is initialized automatically on the first successful website authorization; you do not need to run the old one-time password setup function for this Netlify flow.
-- Keep the existing spreadsheet binding and existing Web App deployment. After updating code, create a new Web App deployment version (or edit the existing deployment) and retain its existing access policy. Do not broaden access to Anyone unless you have reviewed the security implications.
-- Put the deployed /exec URL in Netlify HUB_APPS_SCRIPT_URL.
+FILES
+-----
+- Index.html: existing Employee Hub interface, including the Netlify auth UI.
+- netlify/functions/owner-device-auth.js: server-side authorization endpoint.
+- netlify.toml: publish directory and Netlify Functions directory.
+- employee_hub_google_sheets_v5.gs: updated Apps Script backend.
+- APPS_SCRIPT_UPDATED_Code.gs: same updated backend, ready to copy into the
+  bound Apps Script Code.gs file (includes the editor's default myFunction stub).
+- All original manuals, guides, and tests from the uploaded ZIP are retained.
 
-DEPLOY
-- Commit the package files to the connected GitHub main branch or upload the package using your normal workflow. Netlify production deploys were shown paused due to exhausted account credits; deployment cannot occur until Netlify permits builds again.
-- After deployment, open the Netlify site. The computer authorization gate should call /.netlify/functions/owner-device-auth.
-- Enter OWNER_PASSWORD and click AUTHORIZE THIS COMPUTER.
+NETLIFY ENVIRONMENT VARIABLES
+-----------------------------
+Add these THREE variables to the Employee Dashboard Netlify site's environment
+variables. Do not send their values to ChatGPT or put them in source files.
 
-LIMITATIONS / PRESERVATION
-- No employee data, Google Sheet rows, payroll formulas, task workflows, archive logic, or existing dashboard sections are modified by creating this package.
-- The existing standalone Netlify mode does not provide google.script.run. This patch bridges the Owner Security gate and its device registry only. Apps Script-only cloud snapshot load/revision functions and owner device management screens that directly use google.script.run remain Apps Script-hosted features and are not converted by this patch.
-- Do not remove the old Apps Script password functions or existing Authorized Devices sheet. Existing Apps Script-hosted mode remains in the source; this Netlify gate path uses the Netlify environment password.
-- Keep OWNER_PASSWORD and HUB_BRIDGE_SECRET private. Never paste either into chat, HTML, GitHub source, or screenshots.
+1. OWNER_PASSWORD
+   Value: EXACTLY the same Owner Authorization Password you already created
+   by running bootstrapHubOwnerDevicePasswordOnce() in Apps Script.
+   Do not create a different password for Netlify.
 
-ROLLBACK
-- Restore the previous GitHub commit/deploy if a problem occurs. Do not delete spreadsheet sheets or device records.
+2. HUB_APPS_SCRIPT_URL
+   Value: the deployed Employee Dashboard Apps Script Web App URL ending in
+   /exec. Use the URL for the bound Employee Dashboard spreadsheet project.
+
+3. HUB_BRIDGE_SECRET
+   Value: a newly generated random secret with at least 32 characters.
+   Keep it private.
+
+APPS SCRIPT SCRIPT PROPERTY
+---------------------------
+In Apps Script:
+1. Open Project Settings (gear icon).
+2. Find Script Properties.
+3. Add this property:
+   Property: HUB_NETLIFY_BRIDGE_SECRET
+   Value: the exact same secret used for Netlify HUB_BRIDGE_SECRET.
+4. Save the property.
+
+Do NOT add OWNER_PASSWORD or HUB_APPS_SCRIPT_URL as Apps Script Script
+Properties. Do NOT share either secret in screenshots or chat.
+
+UPDATE THE EXISTING APPS SCRIPT CODE
+------------------------------------
+The current Apps Script project has a Code.gs file. Before changing it:
+1. Open Code.gs.
+2. Press Ctrl+A, then Ctrl+C.
+3. Paste the copied original into Notepad and save a backup file.
+4. Open APPS_SCRIPT_UPDATED_Code.gs from this ZIP.
+5. Copy its complete contents.
+6. Return to the bound Employee Dashboard Apps Script Code.gs file, select
+   its contents, and paste the updated backend.
+7. Click Save.
+
+This updated backend is based on the backend in the uploaded ZIP and retains
+its existing employee, attendance, payroll, audit, archive, evidence, and
+device-registry functions. If you have made additional code changes since
+creating the uploaded ZIP, stop and compare them before replacing Code.gs.
+
+DEPLOY A NEW APPS SCRIPT VERSION
+--------------------------------
+After saving Code.gs:
+1. Click Deploy > Manage deployments.
+2. Find the existing Web App deployment.
+3. Click its Edit (pencil) icon.
+4. For Version, choose New version.
+5. Keep the existing Execute as and Who has access settings unchanged.
+6. Click Deploy.
+7. Use the deployed /exec URL in HUB_APPS_SCRIPT_URL.
+
+Do not change the access setting to Anyone as part of this repair. If the
+existing deployment does not allow the Netlify server to reach doPost, we
+must diagnose that response before changing access.
+
+NETLIFY DEPLOY
+--------------
+The supplied netlify.toml sets:
+- Publish directory: .
+- Functions directory: netlify/functions.
+
+Keep the files at the repository root (the ZIP has no extra enclosing folder).
+Update the connected GitHub repository with these files and allow Netlify to
+build the production deploy. The Netlify build must show that it bundled
+owner-device-auth.js. A skipped/paused build is not a successful deployment.
+
+AFTER DEPLOYMENT
+----------------
+1. Open the Netlify Employee Dashboard website.
+2. Refresh the page.
+3. Enter the same Owner Password you created in Apps Script.
+4. Enter a computer name such as Main Cashier PC.
+5. Click AUTHORIZE THIS COMPUTER.
+6. The computer should be registered in the Authorized Devices sheet.
+
+If it still fails, copy only the visible error text. Do not share passwords,
+bridge secrets, device tokens, or private credentials.
+
+PRESERVATION / SAFETY
+---------------------
+- The patch changes the order in which the Netlify bridge is handled in
+  doPost(e), preventing the nested script-lock timeout.
+- Existing device IDs, token hashes, registration rows, and revocation
+  records are not deleted by this code patch.
+- No spreadsheet sheets or employee rows are deleted by creating this ZIP.
+- No dashboard tabs, employee PINs, tasks, payroll formulas, evidence uploads,
+  archive logic, or other dashboard sections are intentionally removed.
+- The normal snapshot-sync path and payroll-export path remain in place.
+- The original uploaded files are retained in this ZIP, except that the Apps
+  Script backend file is updated with the lock-order correction.
+- This ZIP does not itself change your live Netlify site or live spreadsheet.

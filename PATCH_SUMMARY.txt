@@ -1,0 +1,30 @@
+PATCH SUMMARY — EMPLOYEE HUB V10.15
+=====================================
+
+Root cause identified:
+Netlify device registration was routed inside a doPost(e) block that already
+held LockService.getScriptLock(). The existing hubCheckOwnerPassword_()
+function tries to acquire that same script lock, so registration could time
+out even with the correct password.
+
+Correction:
+Netlify device bridge actions are now parsed and routed before the general
+snapshot-sync lock is acquired. The other doPost actions continue through the
+existing locked flow.
+
+Preserved:
+- All files from the uploaded package.
+- Employee Hub dashboard HTML and tabs.
+- Existing employee, attendance, payroll, tasks, evidence, archive, audit,
+  and device-registry code.
+- Netlify Function endpoint and existing UI password form.
+- Existing Google Sheets data is not touched by preparing this ZIP.
+
+Validation:
+- Original package files retained; only the Apps Script backend and setup
+  instructions were updated, with an additional ready-to-copy Code.gs file.
+- Existing archive, payroll export, quarterly payroll, spoken motivator, and
+  AI coach source tests were run. All passed when the AI coach test was
+  supplied its required Index.html argument.
+- Netlify Function syntax and Apps Script source still require deployment-
+  environment testing. This is not a live-deployment guarantee.

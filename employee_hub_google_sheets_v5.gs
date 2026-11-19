@@ -26,14 +26,27 @@ const HUB_SHEETS = [
 ];
 
 function doPost(e) {
+  // V10.15 FIX: route the Netlify device bridge BEFORE taking the general
+  // snapshot lock. The owner-password verifier takes this same script lock
+  // internally; routing it from inside the locked block caused a lock timeout
+  // during computer registration even when the password was correct.
+  const raw = e && e.postData && e.postData.contents ? e.postData.contents : '{}';
+  let bridgePayload = null;
+  try { bridgePayload = JSON.parse(raw); } catch (_) {}
+  if (bridgePayload && String(bridgePayload.action || '').startsWith('netlifyDevice')) {
+    try {
+      return hubNetlifyDeviceAction_(bridgePayload);
+    } catch (bridgeError) {
+      return json_({ ok: false, error: String(bridgeError && bridgeError.message || bridgeError) });
+    }
+  }
+
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(20000);
     const email = 'Password-authorized device';
 
-    const raw = e && e.postData && e.postData.contents ? e.postData.contents : '{}';
     const payload = JSON.parse(raw);
-    if (String(payload.action||'').startsWith('netlifyDevice')) return hubNetlifyDeviceAction_(payload);
     if (String(payload.action||'') === 'foodCostPayrollExport') return foodCostPayrollExport_({token:payload.token});
     requireHubDevice_(payload.deviceId,payload.deviceToken);
     if (payload.app !== 'Employee Hub' || !payload.data) throw new Error('Invalid Employee Hub payload.');

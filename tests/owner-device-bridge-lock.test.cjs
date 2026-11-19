@@ -1,0 +1,10 @@
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const source = fs.readFileSync('employee_hub_google_sheets_v5.gs', 'utf8');
+const doPost = source.slice(source.indexOf('function doPost(e)'), source.indexOf('/** Serve the Employee Hub shell'));
+assert(doPost.includes('V10.15 FIX: route the Netlify device bridge BEFORE taking the general'));
+assert(doPost.indexOf("startsWith('netlifyDevice')") < doPost.indexOf('const lock = LockService.getScriptLock()'));
+assert(doPost.includes('return hubNetlifyDeviceAction_(bridgePayload)'));
+assert(source.includes('function hubNetlifyDeviceAction_(payload)'));
+assert(source.includes("hubCheckOwnerPassword_(password)"));
+console.log('PASS: Netlify device bridge is routed before the snapshot lock.');
